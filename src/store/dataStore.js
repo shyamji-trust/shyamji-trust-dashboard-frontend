@@ -19,6 +19,7 @@ function mapToCredits(customers, payments) {
       amount: parseFloat(c.donation_amount || 0),
       meetMahantStatus: c.meet_mahant_ji ? 'Yes' : 'No',
       mahantAmount: parseFloat(c.mahant_meeting_amount || 0),
+      platformFee: parseFloat(c.platform_fee_plus_gst || 0),
       paymentMode: payment ? 'Online' : 'Cash',
       image: '',
       status,

@@ -44,8 +44,8 @@ export default function PaymentDetails() {
   const sortedCredits = filteredCredits.slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   const totalPages = Math.ceil(sortedCredits.length / itemsPerPage);
   const paginatedCredits = sortedCredits.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const pageTotalAmount = paginatedCredits.reduce((sum, c) => sum + parseFloat(c.amount || 0), 0);
-  const totalAmount = sortedCredits.reduce((sum, c) => sum + parseFloat(c.amount || 0), 0);
+  const pageTotalAmount = paginatedCredits.reduce((sum, c) => sum + parseFloat(c.amount || 0) + parseFloat(c.mahantAmount || 0) + parseFloat(c.platformFee || 0), 0);
+  const totalAmount = sortedCredits.reduce((sum, c) => sum + parseFloat(c.amount || 0) + parseFloat(c.mahantAmount || 0) + parseFloat(c.platformFee || 0), 0);
 
   const handleExportPDF = () => {
     const fmtAmt = (val) => {
@@ -61,7 +61,7 @@ export default function PaymentDetails() {
 
     autoTable(doc, {
       startY: 27,
-      head: [['Reg No', 'Name', 'Phone', 'Illness', 'Donation Amt', 'Meet Mahant', 'Mahant Amt', 'Total Amt', 'Status', 'Date']],
+      head: [['Reg No', 'Name', 'Phone', 'Illness', 'Donation Amt', 'Meet Mahant', 'Mahant Amt', 'Platform Fee', 'Total Amt', 'Status', 'Date']],
       body: sortedCredits.map(c => [
         c.regNo || '',
         c.personName || '',
@@ -70,7 +70,8 @@ export default function PaymentDetails() {
         fmtAmt(c.amount),
         c.meetMahantStatus || '',
         fmtAmt(c.mahantAmount),
-        fmtAmt(parseFloat(c.amount || 0) + parseFloat(c.mahantAmount || 0)),
+        fmtAmt(c.platformFee),
+        fmtAmt(parseFloat(c.amount || 0) + parseFloat(c.mahantAmount || 0) + parseFloat(c.platformFee || 0)),
         c.status || '',
         formatDate(c.date),
       ]),
@@ -78,16 +79,17 @@ export default function PaymentDetails() {
       headStyles: { fillColor: [79, 70, 229], fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 247, 255] },
       columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 28 },
-        4: { cellWidth: 28, halign: 'right' },
-        5: { cellWidth: 22, halign: 'center' },
-        6: { cellWidth: 25, halign: 'right' },
-        7: { cellWidth: 28, halign: 'right' },
-        8: { cellWidth: 22, halign: 'center' },
-        9: { cellWidth: 22, halign: 'center' },
+        0: { cellWidth: 20 },
+        1: { cellWidth: 32 },
+        2: { cellWidth: 23 },
+        3: { cellWidth: 26 },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 20, halign: 'center' },
+        6: { cellWidth: 23, halign: 'right' },
+        7: { cellWidth: 23, halign: 'right' },
+        8: { cellWidth: 25, halign: 'right' },
+        9: { cellWidth: 20, halign: 'center' },
+        10: { cellWidth: 20, halign: 'center' },
       },
     });
 
@@ -237,10 +239,10 @@ export default function PaymentDetails() {
 
         {/* Desktop View: Table */}
         <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <table className="w-full min-w-[1100px] relative">
+          <table className="w-full min-w-[1220px] relative">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
               <tr>
-                {['Reg No', 'Name', 'Phone', 'Address', 'Aadhaar No', 'Illness', 'Remarks', 'Donation Amt', 'Meet Mahant', 'Mahant Amt', 'Total Amt', 'Status', 'Timestamp'].map(h => (
+                {['Reg No', 'Name', 'Phone', 'Address', 'Aadhaar No', 'Illness', 'Remarks', 'Donation Amt', 'Meet Mahant', 'Mahant Amt', 'Platform Fee', 'Total Amt', 'Status', 'Timestamp'].map(h => (
                   <th key={h} className="px-3 py-3 text-center text-xs font-semibold text-gray-900 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -258,7 +260,8 @@ export default function PaymentDetails() {
                   <td className="px-3 py-3 text-center text-sm font-bold text-emerald-600">{credit.amount ? formatCurrency(credit.amount) : '-'}</td>
                   <td className="px-3 py-3 text-center text-sm text-gray-700">{credit.meetMahantStatus || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm font-semibold text-blue-600">{credit.mahantAmount ? formatCurrency(credit.mahantAmount) : '-'}</td>
-                  <td className="px-3 py-3 text-center text-sm font-bold text-gray-900">{formatCurrency(parseFloat(credit.amount || 0) + parseFloat(credit.mahantAmount || 0))}</td>
+                  <td className="px-3 py-3 text-center text-sm font-semibold text-orange-500">{credit.platformFee ? formatCurrency(credit.platformFee) : '-'}</td>
+                  <td className="px-3 py-3 text-center text-sm font-bold text-gray-900">{formatCurrency(parseFloat(credit.amount || 0) + parseFloat(credit.mahantAmount || 0) + parseFloat(credit.platformFee || 0))}</td>
                   <td className="px-3 py-3 text-center text-sm">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                       credit.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :

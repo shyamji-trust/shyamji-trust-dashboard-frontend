@@ -97,9 +97,10 @@ export default function AdminDashboard() {
   const approvedRecords = useMemo(() => records.filter(r => r.status === 'COMPLETED'), [records]);
 
   const totalRecords  = records.length;
-  const totalDonation = approvedRecords.reduce((s, r) => s + parseFloat(r.amount      || 0), 0);
-  const totalMahant   = approvedRecords.reduce((s, r) => s + parseFloat(r.mahantAmount || 0), 0);
-  const totalCombined = totalDonation + totalMahant;
+  const totalDonation    = approvedRecords.reduce((s, r) => s + parseFloat(r.amount       || 0), 0);
+  const totalMahant      = approvedRecords.reduce((s, r) => s + parseFloat(r.mahantAmount  || 0), 0);
+  const totalPlatformFee = approvedRecords.reduce((s, r) => s + parseFloat(r.platformFee   || 0), 0);
+  const totalCombined    = totalDonation + totalMahant + totalPlatformFee;
   const approvedCount = approvedRecords.length;
   const pendingCount  = records.filter(r => r.status === 'PENDING').length;
 
@@ -202,11 +203,12 @@ export default function AdminDashboard() {
       if (r.date && r.date.startsWith(selectedMonthReport.key)) {
         const d = r.date;
         if (!days[d]) {
-          days[d] = { date: d, count: 0, amount: 0, mahantAmount: 0 };
+          days[d] = { date: d, count: 0, amount: 0, mahantAmount: 0, platformFee: 0 };
         }
         days[d].count++;
         days[d].amount += parseFloat(r.amount || 0);
         days[d].mahantAmount += parseFloat(r.mahantAmount || 0);
+        days[d].platformFee += parseFloat(r.platformFee || 0);
       }
     });
     return Object.values(days).sort((a, b) => a.date.localeCompare(b.date));
@@ -223,11 +225,13 @@ export default function AdminDashboard() {
     const cases = selectedDayCases;
     const donation = cases.reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
     const mahant = cases.reduce((sum, r) => sum + parseFloat(r.mahantAmount || 0), 0);
+    const platformFee = cases.reduce((sum, r) => sum + parseFloat(r.platformFee || 0), 0);
     return {
       count: cases.length,
       donation,
       mahant,
-      total: donation + mahant
+      platformFee,
+      total: donation + mahant + platformFee
     };
   }, [selectedDayCases, selectedDayReport]);
 
@@ -265,14 +269,15 @@ export default function AdminDashboard() {
     <div className="p-0 sm:p-2 md:p-6 space-y-2 md:space-y-5 flex flex-col h-full min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
       {/* ── STATS CARDS ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2 md:gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2 md:gap-3">
         {[
           { label: 'Total Records', value: totalRecords, icon: Users, from: 'from-sky-50', to: 'to-sky-100', border: 'border-sky-200', bg: 'bg-sky-500', text: 'text-sky-700', isCurrency: false },
           { label: "Today's Records", value: todayRecords, icon: Calendar, from: 'from-teal-50', to: 'to-teal-100', border: 'border-teal-200', bg: 'bg-teal-500', text: 'text-teal-700', isCurrency: false },
           { label: "Today's Donation", value: todayDonation, icon: IndianRupee, from: 'from-cyan-50', to: 'to-cyan-100', border: 'border-cyan-200', bg: 'bg-cyan-500', text: 'text-cyan-700', isCurrency: true },
           { label: 'Total Donation', value: totalDonation, icon: IndianRupee, from: 'from-emerald-50', to: 'to-emerald-100', border: 'border-emerald-200', bg: 'bg-emerald-500', text: 'text-emerald-700', isCurrency: true },
           { label: 'Mahant Jii Amt', value: totalMahant, icon: TrendingUp, from: 'from-indigo-50', to: 'to-indigo-100', border: 'border-indigo-200', bg: 'bg-indigo-500', text: 'text-indigo-700', isCurrency: true },
-          { label: 'Combined Total', value: totalCombined, icon: Activity, from: 'from-purple-50', to: 'to-purple-100', border: 'border-purple-200', bg: 'bg-purple-500', text: 'text-purple-700', isCurrency: true },
+          { label: 'Platform Fee', value: totalPlatformFee, icon: Activity, from: 'from-orange-50', to: 'to-orange-100', border: 'border-orange-200', bg: 'bg-orange-500', text: 'text-orange-700', isCurrency: true },
+          { label: 'Total Charged', value: totalCombined, icon: Activity, from: 'from-purple-50', to: 'to-purple-100', border: 'border-purple-200', bg: 'bg-purple-500', text: 'text-purple-700', isCurrency: true },
           { label: 'Approved', value: approvedCount, icon: CheckCircle2, from: 'from-green-50', to: 'to-green-100', border: 'border-green-200', bg: 'bg-green-500', text: 'text-green-700', isCurrency: false },
         ].map(({ label, value, icon: Icon, from, to, border, bg, text, isCurrency }) => (
           <div key={label} className={`bg-gradient-to-br ${from} ${to} rounded-xl p-3 border ${border} flex items-center gap-2`}>
@@ -456,7 +461,7 @@ export default function AdminDashboard() {
             {/* Modal Content */}
             <div className="p-4 overflow-y-auto flex-1 space-y-4">
               {/* Daily Stats Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {[
                   {
                     label: 'Total Cases',
@@ -474,8 +479,13 @@ export default function AdminDashboard() {
                     bg: 'bg-indigo-50 text-indigo-700 border-indigo-200'
                   },
                   {
-                    label: 'Combined Total',
-                    value: formatCurrency(dailyBreakdown.reduce((sum, d) => sum + d.amount + d.mahantAmount, 0)),
+                    label: 'Platform Fee',
+                    value: formatCurrency(dailyBreakdown.reduce((sum, d) => sum + (d.platformFee || 0), 0)),
+                    bg: 'bg-orange-50 text-orange-700 border-orange-200'
+                  },
+                  {
+                    label: 'Total Charged',
+                    value: formatCurrency(dailyBreakdown.reduce((sum, d) => sum + d.amount + d.mahantAmount + (d.platformFee || 0), 0)),
                     bg: 'bg-purple-50 text-purple-700 border-purple-200'
                   }
                 ].map(({ label, value, bg }) => (
@@ -495,7 +505,8 @@ export default function AdminDashboard() {
                       <th className="px-4 py-3 text-center">Cases Count</th>
                       <th className="px-4 py-3 text-center">Donation Amount</th>
                       <th className="px-4 py-3 text-center">Mahant Jii Amount</th>
-                      <th className="px-4 py-3 text-center">Total Amount</th>
+                      <th className="px-4 py-3 text-center">Platform Fee</th>
+                      <th className="px-4 py-3 text-center">Total Charged</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 text-sm text-gray-600">
@@ -505,12 +516,13 @@ export default function AdminDashboard() {
                         <td className="px-4 py-2.5 text-center font-semibold text-sky-600">{day.count}</td>
                         <td className="px-4 py-2.5 text-center text-emerald-600 font-medium">{formatCurrency(day.amount)}</td>
                         <td className="px-4 py-2.5 text-center text-indigo-600 font-medium">{formatCurrency(day.mahantAmount)}</td>
-                        <td className="px-4 py-2.5 text-center text-gray-900 font-bold">{formatCurrency(day.amount + day.mahantAmount)}</td>
+                        <td className="px-4 py-2.5 text-center text-orange-500 font-medium">{formatCurrency(day.platformFee || 0)}</td>
+                        <td className="px-4 py-2.5 text-center text-gray-900 font-bold">{formatCurrency(day.amount + day.mahantAmount + (day.platformFee || 0))}</td>
                       </tr>
                     ))}
                     {dailyBreakdown.length === 0 && (
                       <tr>
-                        <td colSpan="5" className="p-8 text-center text-gray-400 font-medium">No records found for this month.</td>
+                        <td colSpan="6" className="p-8 text-center text-gray-400 font-medium">No records found for this month.</td>
                       </tr>
                     )}
                   </tbody>
@@ -557,7 +569,7 @@ export default function AdminDashboard() {
             {/* Content */}
             <div className="p-4 overflow-y-auto flex-1 space-y-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {/* Daily Stats Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {[
                   {
                     label: 'Total Cases',
@@ -578,7 +590,13 @@ export default function AdminDashboard() {
                     bg: 'bg-gradient-to-br from-indigo-50 to-indigo-100/50 text-indigo-700 border-indigo-200/60 shadow-sm'
                   },
                   {
-                    label: 'Combined Total',
+                    label: 'Platform Fee',
+                    value: formatCurrency(selectedDayStats.platformFee),
+                    icon: Activity,
+                    bg: 'bg-gradient-to-br from-orange-50 to-orange-100/50 text-orange-700 border-orange-200/60 shadow-sm'
+                  },
+                  {
+                    label: 'Total Charged',
                     value: formatCurrency(selectedDayStats.total),
                     icon: Activity,
                     bg: 'bg-gradient-to-br from-purple-50 to-purple-100/50 text-purple-700 border-purple-200/60 shadow-sm'
@@ -629,7 +647,7 @@ export default function AdminDashboard() {
                           <td className="px-4 py-3 text-center text-emerald-600 font-bold">{formatCurrency(r.amount)}</td>
                           <td className="px-4 py-3 text-center text-indigo-600 font-bold">{formatCurrency(r.mahantAmount)}</td>
                           <td className="px-4 py-3 text-center text-gray-900 font-extrabold">
-                            {formatCurrency(parseFloat(r.amount || 0) + parseFloat(r.mahantAmount || 0))}
+                            {formatCurrency(parseFloat(r.amount || 0) + parseFloat(r.mahantAmount || 0) + parseFloat(r.platformFee || 0))}
                           </td>
                           <td className="px-4 py-3 text-center">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColor[r.status] || 'bg-gray-100 text-gray-600'}`}>
@@ -679,7 +697,7 @@ export default function AdminDashboard() {
                       <div className="flex justify-between items-center text-[10px] pt-1.5 border-t border-slate-100/60">
                         <div><span className="text-gray-400 font-semibold">Donation: </span><span className="text-emerald-600 font-bold">{formatCurrency(r.amount || 0)}</span></div>
                         <div><span className="text-gray-400 font-semibold">Mahant: </span><span className="text-indigo-600 font-bold">{formatCurrency(r.mahantAmount || 0)}</span></div>
-                        <div><span className="text-gray-900 font-extrabold">{formatCurrency(parseFloat(r.amount || 0) + parseFloat(r.mahantAmount || 0))}</span></div>
+                        <div><span className="text-gray-900 font-extrabold">{formatCurrency(parseFloat(r.amount || 0) + parseFloat(r.mahantAmount || 0) + parseFloat(r.platformFee || 0))}</span></div>
                       </div>
                     </div>
                   ))}
