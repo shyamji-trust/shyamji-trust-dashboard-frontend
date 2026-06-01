@@ -44,8 +44,6 @@ export default function PaymentDetails() {
   const sortedCredits = filteredCredits.slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   const totalPages = Math.ceil(sortedCredits.length / itemsPerPage);
   const paginatedCredits = sortedCredits.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const pageTotalAmount = paginatedCredits.reduce((sum, c) => sum + parseFloat(c.amount || 0) + parseFloat(c.mahantAmount || 0) + parseFloat(c.platformFee || 0), 0);
-  const totalAmount = sortedCredits.reduce((sum, c) => sum + parseFloat(c.amount || 0) + parseFloat(c.mahantAmount || 0) + parseFloat(c.platformFee || 0), 0);
 
   const handleExportPDF = () => {
     const fmtAmt = (val) => {
@@ -282,19 +280,6 @@ export default function PaymentDetails() {
 
         {/* Footer & Pagination */}
         <div className="px-2 md:px-4 py-2 border-t border-gray-200 bg-gray-50 flex flex-col lg:flex-row items-center justify-between gap-2 lg:gap-4 rounded-b-lg pb-2 md:pb-3">
-          {paginatedCredits.length > 0 && (
-            <div className="flex w-full lg:w-auto justify-between lg:hidden items-center text-xs border-b border-gray-200 pb-2 mb-1 px-1">
-              <div className="flex flex-col"><span className="text-gray-500 text-[9px] uppercase font-medium tracking-wider mb-0.5">Page Total</span><span className="font-medium text-emerald-600 text-[13px]">{formatCurrency(pageTotalAmount)}</span></div>
-              <div className="flex flex-col text-right"><span className="text-gray-500 text-[9px] uppercase font-medium tracking-wider mb-0.5">Total Filtered</span><span className="font-medium text-gray-900 text-[13px]">{formatCurrency(totalAmount)}</span></div>
-            </div>
-          )}
-          {paginatedCredits.length > 0 && (
-            <div className="hidden lg:flex items-center gap-6 text-sm order-2">
-              <div><span className="text-gray-600">Page Total:</span><span className="font-semibold text-emerald-600 ml-1">{formatCurrency(pageTotalAmount)}</span></div>
-              <div className="w-px h-4 bg-gray-300" />
-              <div><span className="text-gray-500 text-xs mr-1">Filtered Total:</span><span className="font-semibold text-gray-900">{formatCurrency(totalAmount)}</span></div>
-            </div>
-          )}
           <div className="flex w-full lg:w-auto justify-between items-center order-3 lg:order-1 gap-2">
             <div className="text-[10px] md:text-sm text-gray-600 flex items-center gap-1.5 md:gap-2 flex-shrink-0">
               <select
