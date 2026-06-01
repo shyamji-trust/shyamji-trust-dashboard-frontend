@@ -208,26 +208,56 @@ export default function PaymentDetails() {
         {/* Mobile View: Cards */}
         <div className="md:hidden flex flex-col gap-2 p-2 overflow-y-auto flex-1 bg-slate-50/50 pb-2">
           {paginatedCredits.map((credit) => (
-            <div key={credit.id} className="bg-white rounded-lg border border-indigo-50 shadow-[0_2px_10px_-4px_rgba(79,70,229,0.1)] p-1.5 flex flex-col gap-1">
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium text-gray-900 text-[11px] uppercase tracking-tight">{credit.personName}</h3>
-                <div className="flex flex-col items-end gap-[1px]">
-                  <span className="font-medium text-emerald-600 text-[12px] tracking-tight leading-none">{formatCurrency(credit.amount)}</span>
-                  <span className={`px-1.5 py-[1px] rounded text-[7px] font-bold tracking-widest uppercase mt-[2px] leading-none ${
-                    credit.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                    credit.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                  }`}>{credit.status}</span>
+            <div key={credit.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 flex flex-col gap-2">
+
+              {/* Row 1: Name + Status */}
+              <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider leading-none mb-0.5">REG: {credit.regNo || '-'}</p>
+                  <h3 className="font-bold text-gray-900 text-sm uppercase tracking-tight leading-tight truncate">{credit.personName}</h3>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide flex-shrink-0 ${
+                  credit.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                  credit.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                }`}>{credit.status}</span>
+              </div>
+
+              {/* Row 2: Contact + Date */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                <div><span className="text-gray-400 font-medium">Phone: </span><span className="text-gray-700 font-semibold">{credit.number || '-'}</span></div>
+                <div><span className="text-gray-400 font-medium">Date: </span><span className="text-gray-700 font-semibold">{formatDate(credit.date)}</span></div>
+                <div className="col-span-2"><span className="text-gray-400 font-medium">Address: </span><span className="text-gray-700">{credit.address || '-'}</span></div>
+                <div><span className="text-gray-400 font-medium">Illness: </span><span className="text-rose-600 font-semibold">{credit.illNess || '-'}</span></div>
+                <div><span className="text-gray-400 font-medium">Meet Mahant: </span><span className="text-gray-700 font-semibold">{credit.meetMahantStatus || '-'}</span></div>
+              </div>
+
+              {/* Row 3: Amounts */}
+              <div className="bg-slate-50 rounded-md p-2 border border-slate-100 grid grid-cols-4 gap-1 text-center">
+                <div>
+                  <p className="text-[8px] text-gray-400 uppercase font-medium tracking-wider">Donation</p>
+                  <p className="text-[11px] font-bold text-emerald-600">{formatCurrency(credit.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] text-gray-400 uppercase font-medium tracking-wider">Mahant</p>
+                  <p className="text-[11px] font-bold text-blue-600">{formatCurrency(credit.mahantAmount)}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] text-gray-400 uppercase font-medium tracking-wider">Fee</p>
+                  <p className="text-[11px] font-bold text-orange-500">{formatCurrency(credit.platformFee)}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] text-gray-400 uppercase font-medium tracking-wider">Total</p>
+                  <p className="text-[11px] font-extrabold text-gray-900">{formatCurrency(parseFloat(credit.amount || 0) + parseFloat(credit.mahantAmount || 0) + parseFloat(credit.platformFee || 0))}</p>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-slate-50 to-indigo-50/30 rounded p-1.5 border border-slate-100">
-                <div className="flex items-center gap-1 mb-0.5 border-b border-slate-200/60 pb-0.5">
-                  <Calendar size={9} className="text-indigo-400" />
-                  <span className="text-[9px] font-medium text-slate-700 tracking-tight leading-none mt-[1px]">{formatDate(credit.date)}</span>
-                  <span className="text-[8px] text-slate-400 font-medium ml-auto tracking-wider leading-none mt-[1px]">REF: {credit.regNo}</span>
+
+              {/* Row 4: Remarks */}
+              {credit.remarks && credit.remarks !== '-' && (
+                <div className="text-[10px] text-gray-500 border-t border-gray-100 pt-1.5">
+                  <span className="font-semibold text-gray-400 uppercase tracking-wider">Remarks: </span>{credit.remarks}
                 </div>
-                <p className="text-[8px] text-indigo-500 font-medium uppercase tracking-wider leading-none">Remarks</p>
-                <p className="text-slate-700 text-[10px] leading-snug font-normal mt-[1px]">{credit.remarks || 'No remarks provided.'}</p>
-              </div>
+              )}
+
             </div>
           ))}
           {filteredCredits.length === 0 && (
