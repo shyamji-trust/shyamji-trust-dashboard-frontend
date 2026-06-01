@@ -105,7 +105,7 @@ export default function AdminDashboard() {
 
   // Today's records
   const today = new Date().toISOString().split('T')[0];
-  const todayRecords  = approvedRecords.filter(r => r.date === today).length;
+  const todayRecords  = records.filter(r => r.date === today).length;
   const todayDonation = approvedRecords.filter(r => r.date === today)
                                         .reduce((s, r) => s + parseFloat(r.amount || 0), 0);
 
