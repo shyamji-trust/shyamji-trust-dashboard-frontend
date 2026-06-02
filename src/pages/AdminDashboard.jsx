@@ -70,7 +70,7 @@ function DonutChart({ data, size = 120 }) {
 }
 
 export default function AdminDashboard() {
-  const { credits: records, loading, error } = useDataStore();
+  const { credits: records, loading, error, fetchData } = useDataStore();
   const [selectedMonthReport, setSelectedMonthReport] = useState(null);
   const [selectedDayReport, setSelectedDayReport] = useState(null);
 

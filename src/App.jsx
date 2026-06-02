@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import PaymentDetails from './pages/PaymentDetails';
 import Settings from './pages/Settings';
+import Scan from './pages/Scan';
 import ProtectedRoute from './components/ProtectedRoute';
 import { initializeStorage } from './utils/storageManager';
 
@@ -30,6 +31,7 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="add-case" element={<PaymentDetails />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="scan" element={<Scan />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

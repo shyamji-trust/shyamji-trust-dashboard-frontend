@@ -20,6 +20,7 @@ export default function PaymentDetails() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [selectedRemark, setSelectedRemark] = useState(null);
 
   useEffect(() => { setCurrentPage(1); }, [filters]);
 
@@ -387,7 +388,10 @@ export default function PaymentDetails() {
 
               {/* Row 4: Remarks */}
               {credit.remarks && credit.remarks !== '-' && (
-                <div className="text-[10px] text-gray-500 border-t border-gray-100 pt-1.5">
+                <div
+                  className="text-[10px] text-gray-500 border-t border-gray-100 pt-1.5 cursor-pointer line-clamp-2 hover:text-sky-600"
+                  onClick={() => setSelectedRemark(credit.remarks)}
+                >
                   <span className="font-semibold text-gray-400 uppercase tracking-wider">Remarks: </span>{credit.remarks}
                 </div>
               )}
@@ -426,7 +430,11 @@ export default function PaymentDetails() {
                   <td className="px-3 py-3 text-center text-sm text-gray-700 max-w-[120px] truncate">{credit.address || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm text-gray-700">{credit.aadharNo || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm text-gray-700">{credit.illNess || '-'}</td>
-                  <td className="px-3 py-3 text-center text-sm text-gray-500 max-w-[100px] truncate">{credit.remarks || '-'}</td>
+                  <td
+                    className="px-3 py-3 text-center text-sm text-gray-500 max-w-[100px] truncate cursor-pointer hover:text-sky-600 hover:underline"
+                    onClick={() => credit.remarks && credit.remarks !== '-' && setSelectedRemark(credit.remarks)}
+                    title={credit.remarks || '-'}
+                  >{credit.remarks || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm font-bold text-emerald-600">{credit.amount ? formatCurrency(credit.amount) : '-'}</td>
                   <td className="px-3 py-3 text-center text-sm text-gray-700">{credit.meetMahantStatus || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm font-semibold text-blue-600">{credit.mahantAmount ? formatCurrency(credit.mahantAmount) : '-'}</td>
@@ -485,6 +493,28 @@ export default function PaymentDetails() {
           </div>
         </div>
       </div>
+
+      {/* Remarks Modal */}
+      {selectedRemark && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSelectedRemark(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-5 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Remarks</h3>
+              <button
+                onClick={() => setSelectedRemark(null)}
+                className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+              >✕</button>
+            </div>
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedRemark}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

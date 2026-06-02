@@ -9,6 +9,9 @@ import {
   X,
   User,
   Users,
+  ScanLine,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
@@ -24,12 +27,14 @@ const Sidebar = ({ isOpen, onClose }) => {
   const adminMenuItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/add-case', icon: Plus, label: 'Payment Details' },
+    { path: '/scan', icon: ScanLine, label: 'Scan Entry' },
     { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   const employeeMenuItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/add-case', icon: Plus, label: 'Payment Details' },
+    { path: '/scan', icon: ScanLine, label: 'Scan Entry' },
   ];
 
   const menuItems = user?.role === 'ADMIN' ? adminMenuItems : employeeMenuItems;
