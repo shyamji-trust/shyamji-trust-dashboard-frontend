@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
 import { CheckCircle2, XCircle, RefreshCw, QrCode } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -7,50 +6,72 @@ const ADMIN_SECRET = import.meta.env.VITE_ADMIN_SCAN_SECRET;
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export default function Scan() {
-  const [phase, setPhase] = useState('scanning'); // scanning | loading | result | done
+  const [phase, setPhase] = useState('scanning');
   const [record, setRecord] = useState(null);
   const [confirming, setConfirming] = useState(false);
-  const scannerRef = useRef(null);
-  const cleaningUp = useRef(false);
+  const [cameraErr, setCameraErr] = useState('');
 
-  const destroyScanner = async () => {
-    if (cleaningUp.current || !scannerRef.current) return;
-    cleaningUp.current = true;
-    const s = scannerRef.current;
-    scannerRef.current = null;
-    try { await s.clear(); } catch { /* DOM already gone — safe to ignore */ }
-    cleaningUp.current = false;
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const rafRef = useRef(null);
+  const detectorRef = useRef(null);
+  const didScan = useRef(false);
+
+  const stopCamera = () => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+    if (videoRef.current) videoRef.current.srcObject = null;
+    didScan.current = false;
   };
 
-  useEffect(() => {
-    if (phase !== 'scanning') {
-      destroyScanner();
+  const scanLoop = async () => {
+    if (didScan.current || !videoRef.current || !detectorRef.current) return;
+    if (videoRef.current.readyState >= 2) {
+      try {
+        const codes = await detectorRef.current.detect(videoRef.current);
+        if (codes.length > 0) {
+          didScan.current = true;
+          stopCamera();
+          handleScanned(codes[0].rawValue);
+          return;
+        }
+      } catch { /* frame decode error — ignore */ }
+    }
+    rafRef.current = requestAnimationFrame(scanLoop);
+  };
+
+  const startCamera = async () => {
+    setCameraErr('');
+    didScan.current = false;
+
+    if (!('BarcodeDetector' in window)) {
+      setCameraErr('QR scanning requires Chrome or Edge. Please open this page in Chrome.');
       return;
     }
 
-    // Small defer so React finishes painting the #qr-reader div before
-    // html5-qrcode injects its own children into it.
-    const tid = setTimeout(() => {
-      if (scannerRef.current) return; // already mounted (StrictMode second call)
-      try {
-        const scanner = new Html5QrcodeScanner(
-          'qr-reader',
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          false
-        );
-        scanner.render(onScanSuccess, () => {});
-        scannerRef.current = scanner;
-      } catch { /* element not yet in DOM */ }
-    }, 50);
+    try {
+      detectorRef.current = new window.BarcodeDetector({ formats: ['qr_code'] });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      rafRef.current = requestAnimationFrame(scanLoop);
+    } catch {
+      setCameraErr('Camera access denied. Allow camera permission and try again.');
+    }
+  };
 
-    return () => {
-      clearTimeout(tid);
-      destroyScanner();
-    };
+  useEffect(() => {
+    if (phase === 'scanning') startCamera();
+    else stopCamera();
+    return stopCamera;
   }, [phase]);
 
-  const onScanSuccess = async (raw) => {
-    // QR may encode a full URL — extract just the UUID at the end
+  const handleScanned = async (raw) => {
     const token = raw.includes('/') ? raw.split('/').pop() : raw;
     setPhase('loading');
     try {
@@ -59,12 +80,9 @@ export default function Scan() {
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
         body: JSON.stringify({ token }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || 'QR not found');
-        setPhase('scanning');
-        return;
-      }
+      let data = {};
+      try { data = await res.json(); } catch { /* empty body */ }
+      if (!res.ok) { toast.error(data.error || 'QR not found'); setPhase('scanning'); return; }
       setRecord(data);
       setPhase('result');
     } catch {
@@ -82,10 +100,7 @@ export default function Scan() {
         body: JSON.stringify({ token: record.token }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || 'Failed to confirm');
-        return;
-      }
+      if (!res.ok) { toast.error(data.error || 'Failed to confirm'); return; }
       setPhase('done');
       toast.success('Entry confirmed!');
     } catch {
@@ -95,10 +110,7 @@ export default function Scan() {
     }
   };
 
-  const reset = () => {
-    setRecord(null);
-    setPhase('scanning');
-  };
+  const reset = () => { setRecord(null); setPhase('scanning'); };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 flex flex-col items-center">
@@ -116,7 +128,27 @@ export default function Scan() {
               <QrCode size={18} className="text-sky-600" />
               <span className="font-semibold text-gray-800 text-sm">Point camera at QR code</span>
             </div>
-            <div id="qr-reader" className="w-full" />
+            {cameraErr ? (
+              <div className="p-8 text-center space-y-3">
+                <p className="text-sm text-red-500 font-medium">{cameraErr}</p>
+                <button onClick={startCamera} className="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold">
+                  Try Again
+                </button>
+              </div>
+            ) : (
+              <div className="relative bg-black">
+                <video
+                  ref={videoRef}
+                  className="w-full aspect-square object-cover"
+                  playsInline
+                  muted
+                />
+                {/* Targeting box */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-52 h-52 rounded-lg border-2 border-sky-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]" />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -161,24 +193,14 @@ export default function Scan() {
                   <p className="font-semibold text-gray-800">{record.customer?.phone_no || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Illness</p>
-                  <p className="font-semibold text-gray-800">{record.customer?.illness || '—'}</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Donation</p>
+                  <p className="font-semibold text-emerald-600">₹{record.customer?.donation_amount || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Donation</p>
-                  <p className="font-semibold text-emerald-600">
-                    ₹{record.customer?.donation_amount || '—'}
-                  </p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Payment Status</p>
-                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                    record.payment?.status === 'COMPLETED'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {record.payment?.status || 'PENDING'}
-                  </span>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Payment</p>
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    record.payment?.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>{record.payment?.status || 'PENDING'}</span>
                 </div>
               </div>
             </div>
@@ -196,10 +218,7 @@ export default function Scan() {
                   {confirming ? 'Confirming...' : 'Confirm Entry'}
                 </button>
               )}
-              <button
-                onClick={reset}
-                className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition flex items-center justify-center gap-2"
-              >
+              <button onClick={reset} className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition flex items-center justify-center gap-2">
                 <RefreshCw size={17} /> Scan Another
               </button>
             </div>
@@ -212,14 +231,9 @@ export default function Scan() {
             <div className="bg-green-50 border border-green-200 rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
               <CheckCircle2 size={60} className="text-green-500" />
               <h2 className="font-bold text-green-800 text-2xl">Entry Confirmed!</h2>
-              <p className="text-sm text-green-600 font-medium">
-                {record?.customer?.name} has been checked in.
-              </p>
+              <p className="text-sm text-green-600 font-medium">{record?.customer?.name} has been checked in.</p>
             </div>
-            <button
-              onClick={reset}
-              className="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 text-base"
-            >
+            <button onClick={reset} className="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 text-base">
               <RefreshCw size={18} /> Scan Next Person
             </button>
           </div>
