@@ -49,7 +49,9 @@ export default function Scan() {
     };
   }, [phase]);
 
-  const onScanSuccess = async (token) => {
+  const onScanSuccess = async (raw) => {
+    // QR may encode a full URL — extract just the UUID at the end
+    const token = raw.includes('/') ? raw.split('/').pop() : raw;
     setPhase('loading');
     try {
       const res = await fetch(`${API_BASE}/api/admin/verify-scan`, {
