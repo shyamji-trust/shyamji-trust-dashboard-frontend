@@ -21,6 +21,7 @@ function mapToCredits(customers, payments) {
       mahantAmount: parseFloat(c.mahant_meeting_amount || 0),
       platformFee: parseFloat(c.platform_fee_plus_gst || 0),
       paymentMode: payment ? 'Online' : 'Cash',
+      qrToken: payment ? (payment.qr_token || '') : '',
       image: '',
       status,
       date: c.created_at ? c.created_at.slice(0, 10) : '',

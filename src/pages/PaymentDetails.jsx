@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, Search, ChevronLeft, ChevronRight, Calendar, FileDown } from 'lucide-react';
+import { Filter, Search, ChevronLeft, ChevronRight, Calendar, FileDown, Printer } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import QRCode from 'qrcode';
 import useDataStore from '../store/dataStore';
 import { formatDate, formatCurrency } from '../utils/helpers';
 
@@ -92,6 +93,138 @@ export default function PaymentDetails() {
     });
 
     doc.save(`payments-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
+  const generateReceiptPDF = async (credit) => {
+    const now = new Date();
+    const fullDateTime =
+      now.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) +
+      ' at ' +
+      now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    let qrDataUrl = '';
+    try {
+      qrDataUrl = await QRCode.toDataURL(credit.qrToken || credit.regNo || 'N/A', { width: 128, margin: 1 });
+    } catch (_) {}
+
+    const donation = parseFloat(credit.amount || 0);
+    const mahant = parseFloat(credit.mahantAmount || 0);
+    const fee = parseFloat(credit.platformFee || 0);
+    const total = donation + mahant + fee;
+
+    const html = `<!DOCTYPE html><html><head>
+  <meta charset="UTF-8">
+  <title>Receipt - ${credit.regNo}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @page { size: A4; margin: 8mm; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',Arial,sans-serif; color:#1a0a00; background:#fff; font-size:12px; }
+    .page { max-width:720px; margin:0 auto; padding:18px 28px; }
+    .header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:12px; margin-bottom:12px; border-bottom:2.5px solid #e07b20; }
+    .header-left { flex:1; }
+    .trust-name { font-size:16px; font-weight:800; color:#e07b20; margin-bottom:2px; }
+    .trust-sub { font-size:10.5px; color:#666; line-height:1.5; }
+    .reg-wrap { margin-top:8px; }
+    .reg-label { font-size:9px; font-weight:700; color:#a07040; text-transform:uppercase; letter-spacing:1px; }
+    .reg-num { font-size:22px; font-weight:800; color:#1a0a00; letter-spacing:3px; margin-top:1px; }
+    .header-right { text-align:center; flex-shrink:0; margin-left:20px; }
+    .qr-border { border:1.5px solid #fcd68a; border-radius:8px; padding:6px; background:#fffdf8; display:inline-block; }
+    .qr-caption { font-size:8px; color:#a07040; text-transform:uppercase; letter-spacing:0.6px; margin-top:4px; font-weight:600; }
+    .status-bar { display:flex; gap:10px; margin-bottom:12px; }
+    .pill { flex:1; background:#f9f5ef; border:1px solid #fcd68a; border-radius:7px; padding:7px 12px; }
+    .pill-label { font-size:8.5px; font-weight:700; color:#a07040; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:2px; }
+    .pill-value { font-size:12px; font-weight:700; color:#1a0a00; }
+    .paid-badge { display:inline-block; background:#16a34a; color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
+    .section { margin-bottom:12px; }
+    .section-title { font-size:9.5px; font-weight:800; color:#e07b20; text-transform:uppercase; letter-spacing:1.2px; border-bottom:1.5px solid #fcd68a; padding-bottom:4px; margin-bottom:8px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:7px 20px; }
+    .grid-lbl { font-size:9px; font-weight:700; color:#a07040; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:1px; }
+    .grid-val { font-size:12px; color:#1a0a00; font-weight:500; line-height:1.35; }
+    table { width:100%; border-collapse:collapse; }
+    th { background:#fff8f0; color:#e07b20; font-weight:700; text-align:left; padding:7px 12px; border:1px solid #fcd68a; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; }
+    td { padding:7px 12px; border:1px solid #e5e7eb; color:#1a0a00; font-size:12px; }
+    .total-row td { font-weight:800; background:#fdf3e3; color:#e07b20; font-size:13px; border-color:#fcd68a; }
+    .notes ol { padding-left:16px; }
+    .notes li { font-size:10.5px; color:#555; margin-bottom:3px; line-height:1.55; }
+    .footer { display:flex; justify-content:space-between; align-items:center; border-top:2px solid #e07b20; padding-top:10px; margin-top:12px; }
+    .footer-trust { font-size:13px; font-weight:800; color:#e07b20; }
+    .footer-contact { font-size:10.5px; color:#666; text-align:right; line-height:1.6; }
+    .watermark { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-28deg); font-size:72px; font-weight:900; color:#f5dfc0; opacity:0.09; pointer-events:none; z-index:0; white-space:nowrap; }
+    @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+  </style>
+</head><body>
+  <div class="watermark">JAI SHREE SHYAM</div>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div class="trust-name">Shree Shyamji Mandir Trust</div>
+        <div class="trust-sub">Kantabanji-767039, Balangir, Odisha</div>
+        <div class="trust-sub">Ph: 9937021255 | 9853076485</div>
+        <div class="reg-wrap">
+          <div class="reg-label">Registration Number</div>
+          <div class="reg-num">${credit.regNo}</div>
+        </div>
+      </div>
+      ${qrDataUrl ? `<div class="header-right"><div class="qr-border"><img src="${qrDataUrl}" width="96" height="96" style="display:block"/></div><div class="qr-caption">Scan at entry gate</div></div>` : ''}
+    </div>
+    <div class="status-bar">
+      <div class="pill"><div class="pill-label">Generated On</div><div class="pill-value">${fullDateTime}</div></div>
+      <div class="pill"><div class="pill-label">Event Date</div><div class="pill-value">14th July 2026</div></div>
+      <div class="pill"><div class="pill-label">Payment</div><div class="pill-value"><span class="paid-badge">Paid</span></div></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Event Details</div>
+      <div class="grid">
+        <div><div class="grid-lbl">Occasion</div><div class="grid-val">Shri Amrendra Ji Maharaj Darshan (Manona Dham)</div></div>
+        <div><div class="grid-lbl">Venue</div><div class="grid-val">Shree Shyamji Mandir, Kantabanji-767039, Odisha</div></div>
+        <div><div class="grid-lbl">Date</div><div class="grid-val">14th July 2026</div></div>
+        <div><div class="grid-lbl">Timings</div><div class="grid-val">9:00 AM to 6:00 PM</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Devotee Details</div>
+      <div class="grid">
+        <div><div class="grid-lbl">Full Name</div><div class="grid-val">${credit.personName}</div></div>
+        <div><div class="grid-lbl">Mobile</div><div class="grid-val">+91 ${credit.number}</div></div>
+        <div><div class="grid-lbl">Address</div><div class="grid-val">${credit.address || 'N/A'}</div></div>
+        <div><div class="grid-lbl">Aadhar No</div><div class="grid-val">${credit.aadharNo || 'N/A'}</div></div>
+        ${credit.illNess ? `<div><div class="grid-lbl">Illness</div><div class="grid-val">${credit.illNess}</div></div>` : ''}
+        <div><div class="grid-lbl">Meet Mahant Ji</div><div class="grid-val">${credit.meetMahantStatus}</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Payment Breakdown</div>
+      <table>
+        <thead><tr><th>Particulars</th><th style="text-align:right">Amount (Rs.)</th></tr></thead>
+        <tbody>
+          <tr><td>Maharaj Ji Meeting / Darshan Fee</td><td style="text-align:right">${mahant > 0 ? mahant.toLocaleString('en-IN') : '0'}</td></tr>
+          <tr><td>Voluntary Donation</td><td style="text-align:right">${donation > 0 ? donation.toLocaleString('en-IN') : '0'}</td></tr>
+          <tr><td>Gateway Fee (2% + 18% GST on fee)</td><td style="text-align:right">${fee.toLocaleString('en-IN')}</td></tr>
+          <tr class="total-row"><td><strong>Total Paid</strong></td><td style="text-align:right"><strong>Rs. ${total.toLocaleString('en-IN')}</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section notes">
+      <div class="section-title">Important Notes</div>
+      <ol>
+        <li>Carry this receipt and show the QR code at the entry gate.</li>
+        <li>The QR code is unique and can only be used <strong>once</strong> for entry.</li>
+        <li>Registration number is mandatory for darshan entry.</li>
+        <li>Donation amount is voluntary and non-refundable.</li>
+        <li>Organizers reserve the right to manage schedules for smooth darshan.</li>
+      </ol>
+    </div>
+    <div class="footer">
+      <div><div class="footer-trust">Shree Shyamji Mandir Trust</div><div style="font-size:11px;color:#888;margin-top:2px">Kantabanji-767039, Balangir, Odisha</div></div>
+      <div class="footer-contact">Ph: 9937021255<br/>9853076485</div>
+    </div>
+  </div>
+  <script>window.onload = function() { window.print(); }<\/script>
+</body></html>`;
+
+    const win = window.open('', '_blank', 'width=780,height=960');
+    if (win) { win.document.write(html); win.document.close(); }
   };
 
   if (dataLoading) {
@@ -258,6 +391,14 @@ export default function PaymentDetails() {
                 </div>
               )}
 
+              {/* Row 5: Generate Receipt */}
+              <button
+                onClick={() => generateReceiptPDF(credit)}
+                className="w-full flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white py-1.5 rounded-md text-xs font-semibold transition mt-1"
+              >
+                <Printer size={12} /> Generate Receipt
+              </button>
+
             </div>
           ))}
           {filteredCredits.length === 0 && (
@@ -267,10 +408,10 @@ export default function PaymentDetails() {
 
         {/* Desktop View: Table */}
         <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <table className="w-full min-w-[1220px] relative">
+          <table className="w-full min-w-[1300px] relative">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
               <tr>
-                {['Reg No', 'Name', 'Phone', 'Address', 'Aadhaar No', 'Illness', 'Remarks', 'Donation Amt', 'Meet Mahant', 'Mahant Amt', 'Platform Fee', 'Total Amt', 'Status', 'Timestamp'].map(h => (
+                {['Reg No', 'Name', 'Phone', 'Address', 'Aadhaar No', 'Illness', 'Remarks', 'Donation Amt', 'Meet Mahant', 'Mahant Amt', 'Platform Fee', 'Total Amt', 'Status', 'Timestamp', 'Receipt'].map(h => (
                   <th key={h} className="px-3 py-3 text-center text-xs font-semibold text-gray-900 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -298,6 +439,14 @@ export default function PaymentDetails() {
                   </td>
                   <td className="px-3 py-3 text-center text-sm text-gray-500 whitespace-nowrap">
                     {credit.timestamp ? new Date(credit.timestamp).toLocaleString('en-IN') : '-'}
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <button
+                      onClick={() => generateReceiptPDF(credit)}
+                      className="inline-flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-2.5 py-1 rounded text-xs font-semibold transition shadow-sm"
+                    >
+                      <Printer size={11} /> PDF
+                    </button>
                   </td>
                 </tr>
               ))}
