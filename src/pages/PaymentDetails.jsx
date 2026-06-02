@@ -24,6 +24,7 @@ export default function PaymentDetails() {
   useEffect(() => { setCurrentPage(1); }, [filters]);
 
   const filteredCredits = credits.filter(credit => {
+    if (credit.status !== 'COMPLETED') return false;
     if (filters.fromDate && credit.date < filters.fromDate) return false;
     if (filters.toDate && credit.date > filters.toDate) return false;
     if (filters.personName && credit.personName !== filters.personName) return false;
