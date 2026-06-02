@@ -345,16 +345,10 @@ export default function PaymentDetails() {
           {paginatedCredits.map((credit) => (
             <div key={credit.id} className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 flex flex-col gap-2">
 
-              {/* Row 1: Name + Status */}
-              <div className="flex justify-between items-start gap-2">
-                <div className="min-w-0">
-                  <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider leading-none mb-0.5">REG: {credit.regNo || '-'}</p>
-                  <h3 className="font-bold text-gray-900 text-sm uppercase tracking-tight leading-tight truncate">{credit.personName}</h3>
-                </div>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide flex-shrink-0 ${
-                  credit.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                  credit.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                }`}>{credit.status}</span>
+              {/* Row 1: Name */}
+              <div className="min-w-0">
+                <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider leading-none mb-0.5">REG: {credit.regNo || '-'}</p>
+                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-tight leading-tight truncate">{credit.personName}</h3>
               </div>
 
               {/* Row 2: Contact + Date */}
@@ -362,8 +356,6 @@ export default function PaymentDetails() {
                 <div><span className="text-gray-400 font-medium">Phone: </span><span className="text-gray-700 font-semibold">{credit.number || '-'}</span></div>
                 <div><span className="text-gray-400 font-medium">Date: </span><span className="text-gray-700 font-semibold">{formatDate(credit.date)}</span></div>
                 <div className="col-span-2"><span className="text-gray-400 font-medium">Address: </span><span className="text-gray-700">{credit.address || '-'}</span></div>
-                <div><span className="text-gray-400 font-medium">Illness: </span><span className="text-rose-600 font-semibold">{credit.illNess || '-'}</span></div>
-                <div><span className="text-gray-400 font-medium">Meet Mahant: </span><span className="text-gray-700 font-semibold">{credit.meetMahantStatus || '-'}</span></div>
               </div>
 
               {/* Row 3: Amounts */}
@@ -386,17 +378,7 @@ export default function PaymentDetails() {
                 </div>
               </div>
 
-              {/* Row 4: Remarks */}
-              {credit.remarks && credit.remarks !== '-' && (
-                <div
-                  className="text-[10px] text-gray-500 border-t border-gray-100 pt-1.5 cursor-pointer line-clamp-2 hover:text-sky-600"
-                  onClick={() => setSelectedRemark(credit.remarks)}
-                >
-                  <span className="font-semibold text-gray-400 uppercase tracking-wider">Remarks: </span>{credit.remarks}
-                </div>
-              )}
-
-              {/* Row 5: Generate Receipt */}
+              {/* Generate Receipt */}
               <button
                 onClick={() => generateReceiptPDF(credit)}
                 className="w-full flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white py-1.5 rounded-md text-xs font-semibold transition mt-1"
@@ -413,10 +395,10 @@ export default function PaymentDetails() {
 
         {/* Desktop View: Table */}
         <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1 min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <table className="w-full min-w-[1300px] relative">
+          <table className="w-full min-w-[900px] relative">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
               <tr>
-                {['Reg No', 'Name', 'Phone', 'Address', 'Aadhaar No', 'Illness', 'Remarks', 'Donation Amt', 'Meet Mahant', 'Mahant Amt', 'Platform Fee', 'Total Amt', 'Status', 'Timestamp', 'Receipt'].map(h => (
+                {['Reg No', 'Name', 'Phone', 'Address', 'Aadhaar No', 'Donation Amt', 'Mahant Amt', 'Platform Fee', 'Total Amt', 'Timestamp', 'Receipt'].map(h => (
                   <th key={h} className="px-3 py-3 text-center text-xs font-semibold text-gray-900 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -429,25 +411,17 @@ export default function PaymentDetails() {
                   <td className="px-3 py-3 text-center text-sm text-gray-700">{credit.number || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm text-gray-700 max-w-[120px] truncate">{credit.address || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm text-gray-700">{credit.aadharNo || '-'}</td>
-                  <td className="px-3 py-3 text-center text-sm text-gray-700">{credit.illNess || '-'}</td>
-                  <td
-                    className="px-3 py-3 text-center text-sm text-gray-500 max-w-[100px] truncate cursor-pointer hover:text-sky-600 hover:underline"
-                    onClick={() => credit.remarks && credit.remarks !== '-' && setSelectedRemark(credit.remarks)}
-                    title={credit.remarks || '-'}
-                  >{credit.remarks || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm font-bold text-emerald-600">{credit.amount ? formatCurrency(credit.amount) : '-'}</td>
-                  <td className="px-3 py-3 text-center text-sm text-gray-700">{credit.meetMahantStatus || '-'}</td>
                   <td className="px-3 py-3 text-center text-sm font-semibold text-blue-600">{credit.mahantAmount ? formatCurrency(credit.mahantAmount) : '-'}</td>
                   <td className="px-3 py-3 text-center text-sm font-semibold text-orange-500">{credit.platformFee ? formatCurrency(credit.platformFee) : '-'}</td>
                   <td className="px-3 py-3 text-center text-sm font-bold text-gray-900">{formatCurrency(parseFloat(credit.amount || 0) + parseFloat(credit.mahantAmount || 0) + parseFloat(credit.platformFee || 0))}</td>
-                  <td className="px-3 py-3 text-center text-sm">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      credit.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                      credit.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                    }`}>{credit.status || '-'}</span>
-                  </td>
-                  <td className="px-3 py-3 text-center text-sm text-gray-500 whitespace-nowrap">
-                    {credit.timestamp ? new Date(credit.timestamp).toLocaleString('en-IN') : '-'}
+                  <td className="px-3 py-3 text-center text-sm text-gray-500">
+                    {credit.timestamp ? (
+                      <div className="flex flex-col leading-tight">
+                        <span>{new Date(credit.timestamp).toLocaleDateString('en-IN')}</span>
+                        <span className="text-xs text-gray-400">{new Date(credit.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    ) : '-'}
                   </td>
                   <td className="px-3 py-3 text-center">
                     <button

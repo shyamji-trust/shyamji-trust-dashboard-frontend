@@ -48,7 +48,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-56 bg-white border-r border-sky-200 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed top-0 left-0 h-full w-36 bg-white border-r border-sky-200 z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           {/* Logo Section */}
           <div className="p-6 border-b border-sky-200 flex items-center justify-between">
@@ -56,7 +56,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               <div className="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center">
                 <Users size={20} className="text-white" />
               </div>
-              <span className="text-xl font-bold text-sky-600 tracking-tight">Trust Admin Panel</span>
+              <span className="text-sm font-bold text-sky-600 tracking-tight">Trust Admin Panel</span>
             </div>
             <button onClick={onClose} className="lg:hidden p-2 hover:bg-sky-100 rounded-lg">
               <X size={20} className="text-sky-600" />

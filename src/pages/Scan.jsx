@@ -11,29 +11,41 @@ export default function Scan() {
   const [record, setRecord] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const scannerRef = useRef(null);
+  const cleaningUp = useRef(false);
+
+  const destroyScanner = async () => {
+    if (cleaningUp.current || !scannerRef.current) return;
+    cleaningUp.current = true;
+    const s = scannerRef.current;
+    scannerRef.current = null;
+    try { await s.clear(); } catch { /* DOM already gone — safe to ignore */ }
+    cleaningUp.current = false;
+  };
 
   useEffect(() => {
     if (phase !== 'scanning') {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(() => {});
-        scannerRef.current = null;
-      }
+      destroyScanner();
       return;
     }
 
-    const scanner = new Html5QrcodeScanner(
-      'qr-reader',
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      false
-    );
-    scanner.render(onScanSuccess, () => {});
-    scannerRef.current = scanner;
+    // Small defer so React finishes painting the #qr-reader div before
+    // html5-qrcode injects its own children into it.
+    const tid = setTimeout(() => {
+      if (scannerRef.current) return; // already mounted (StrictMode second call)
+      try {
+        const scanner = new Html5QrcodeScanner(
+          'qr-reader',
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          false
+        );
+        scanner.render(onScanSuccess, () => {});
+        scannerRef.current = scanner;
+      } catch { /* element not yet in DOM */ }
+    }, 50);
 
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(() => {});
-        scannerRef.current = null;
-      }
+      clearTimeout(tid);
+      destroyScanner();
     };
   }, [phase]);
 

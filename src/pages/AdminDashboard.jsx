@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   TrendingUp, Users, IndianRupee, CheckCircle2, Clock,
-  Calendar, HeartPulse, Star, BarChart3, PieChart, Activity, X,
+  Calendar, MapPin, Star, BarChart3, PieChart, Activity, X,
 } from 'lucide-react';
 import { formatDate, formatCurrency } from '../utils/helpers';
 import useDataStore from '../store/dataStore';
@@ -113,16 +113,16 @@ export default function AdminDashboard() {
   // ── Analytics: Status breakdown ─────────────────────────────────────────
   const statusBreakdown = useMemo(() => {
     const map = {};
-    records.forEach(r => { const s = r.status || 'UNKNOWN'; map[s] = (map[s] || 0) + 1; });
+    records.forEach(r => { const s = r.status || 'UNKNOWN'; if (s !== 'PENDING') map[s] = (map[s] || 0) + 1; });
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [records]);
 
-  // ── Analytics: Illness breakdown ─────────────────────────────────────────
-  const illnessBreakdown = useMemo(() => {
+  // ── Analytics: Address breakdown ─────────────────────────────────────────
+  const addressBreakdown = useMemo(() => {
     const map = {};
     records.forEach(r => {
-      const ill = (r.illNess || 'Not Specified').trim();
-      map[ill] = (map[ill] || 0) + 1;
+      const addr = (r.address || 'Not Specified').trim();
+      map[addr] = (map[addr] || 0) + 1;
     });
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 8);
   }, [records]);
@@ -297,16 +297,16 @@ export default function AdminDashboard() {
       {/* ── ANALYTICS CHARTS ROW 1 ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
 
-        {/* Illness Breakdown */}
+        {/* Address Breakdown */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 xl:col-span-1">
           <div className="flex items-center gap-2 mb-3">
-            <HeartPulse size={16} className="text-rose-500" />
-            <h3 className="text-sm font-semibold text-gray-800">Illness Breakdown</h3>
+            <MapPin size={16} className="text-sky-500" />
+            <h3 className="text-sm font-semibold text-gray-800">Address Breakdown</h3>
           </div>
           <div className="space-y-2">
-            {illnessBreakdown.length > 0 ? illnessBreakdown.map(([ill, cnt], i) => (
-              <HBar key={ill} label={ill} value={cnt} max={illnessBreakdown[0][1]} color={COLORS[i % COLORS.length]} />
-            )) : <p className="text-xs text-gray-400 text-center py-4">No illness data</p>}
+            {addressBreakdown.length > 0 ? addressBreakdown.map(([addr, cnt], i) => (
+              <HBar key={addr} label={addr} value={cnt} max={addressBreakdown[0][1]} color={COLORS[i % COLORS.length]} />
+            )) : <p className="text-xs text-gray-400 text-center py-4">No address data</p>}
           </div>
         </div>
 
