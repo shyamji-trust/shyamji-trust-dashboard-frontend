@@ -75,18 +75,24 @@ export default function Scan() {
     const token = raw.includes('/') ? raw.split('/').pop() : raw;
     setPhase('loading');
     try {
-      const res = await fetch(`${API_BASE}/api/admin/verify-scan`, {
+      const url = `${API_BASE}/api/admin/verify-scan`;
+      const secret = ADMIN_SECRET;
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-secret': ADMIN_SECRET },
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
         body: JSON.stringify({ token }),
       });
       let data = {};
       try { data = await res.json(); } catch { /* empty body */ }
-      if (!res.ok) { toast.error(data.error || 'QR not found'); setPhase('scanning'); return; }
+      if (!res.ok) {
+        toast.error(`${res.status} | secret:${secret ?? 'MISSING'} | ${data.error || res.statusText}`, { duration: 8000 });
+        setPhase('scanning');
+        return;
+      }
       setRecord(data);
       setPhase('result');
-    } catch {
-      toast.error('Failed to verify QR');
+    } catch (err) {
+      toast.error(`Network error: ${err.message}`, { duration: 8000 });
       setPhase('scanning');
     }
   };
