@@ -199,8 +199,14 @@ export default function Scan() {
                   <p className="font-semibold text-gray-800">{record.customer?.phone_no || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Donation</p>
-                  <p className="font-semibold text-emerald-600">₹{record.customer?.donation_amount || '—'}</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Total Amount</p>
+                  <p className="font-semibold text-emerald-600">
+                    ₹{(
+                      parseFloat(record.customer?.donation_amount || 0) +
+                      parseFloat(record.customer?.mahant_meeting_amount || 0) +
+                      parseFloat(record.customer?.platform_fee_plus_gst || 0)
+                    ).toLocaleString('en-IN')}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-0.5">Payment</p>
