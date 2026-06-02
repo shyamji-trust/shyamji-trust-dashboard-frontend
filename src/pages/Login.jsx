@@ -24,7 +24,13 @@ const Login = () => {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        toast.error('Cannot reach server. Is the backend running?');
+        return;
+      }
 
       if (!response.ok) {
         toast.error(data.error || 'Invalid credentials');
