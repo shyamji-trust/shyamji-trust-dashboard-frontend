@@ -8,7 +8,17 @@ import PaymentDetails from './pages/PaymentDetails';
 import Settings from './pages/Settings';
 import Scan from './pages/Scan';
 import ProtectedRoute from './components/ProtectedRoute';
+import { useAuthStore } from './store/authStore';
 import { initializeStorage } from './utils/storageManager';
+
+function PermissionRoute({ permKey, adminOnly, children }) {
+  const user = useAuthStore(state => state.user);
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'ADMIN') return children;
+  if (adminOnly) return <Navigate to="/" replace />;
+  if (!(user.permissions || {})[permKey]) return <Navigate to="/" replace />;
+  return children;
+}
 
 function App() {
   useEffect(() => {
@@ -21,7 +31,7 @@ function App() {
         <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
         <Routes>
           <Route path="/login" element={<Login />} />
-          
+
           <Route path="/" element={
             <ProtectedRoute>
               <Layout />
@@ -29,9 +39,9 @@ function App() {
           }>
             <Route index element={<AdminDashboard />} />
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="add-case" element={<PaymentDetails />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="scan" element={<Scan />} />
+            <Route path="add-case" element={<PermissionRoute permKey="payments"><PaymentDetails /></PermissionRoute>} />
+            <Route path="scan" element={<PermissionRoute permKey="scan"><Scan /></PermissionRoute>} />
+            <Route path="settings" element={<PermissionRoute adminOnly><Settings /></PermissionRoute>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

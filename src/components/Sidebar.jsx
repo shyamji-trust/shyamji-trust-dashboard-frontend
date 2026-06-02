@@ -24,20 +24,18 @@ const Sidebar = ({ isOpen, onClose }) => {
     navigate('/login', { replace: true });
   };
 
-  const adminMenuItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/add-case', icon: Plus, label: 'Payment Details' },
-    { path: '/scan', icon: ScanLine, label: 'Scan Entry' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
+  const ALL_MENU_ITEMS = [
+    { path: '/', icon: LayoutDashboard, label: 'Dashboard', permKey: 'dashboard' },
+    { path: '/add-case', icon: Plus, label: 'Payment Details', permKey: 'payments' },
+    { path: '/scan', icon: ScanLine, label: 'Scan Entry', permKey: 'scan' },
+    { path: '/settings', icon: Settings, label: 'Settings', adminOnly: true },
   ];
 
-  const employeeMenuItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/add-case', icon: Plus, label: 'Payment Details' },
-    { path: '/scan', icon: ScanLine, label: 'Scan Entry' },
-  ];
-
-  const menuItems = user?.role === 'ADMIN' ? adminMenuItems : employeeMenuItems;
+  const menuItems = ALL_MENU_ITEMS.filter(item => {
+    if (item.adminOnly) return user?.role === 'ADMIN';
+    if (user?.role === 'ADMIN') return true;
+    return (user?.permissions || {})[item.permKey] === true;
+  });
 
   return (
     <>
